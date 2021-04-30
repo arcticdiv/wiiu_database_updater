@@ -1,3 +1,4 @@
+import logging
 import itertools
 from typing import List, Optional
 
@@ -14,6 +15,9 @@ from .title import Title
 from .database import Database, DatabaseJsonType
 
 
+_logger = logging.getLogger(__name__)
+
+
 class EShop:
     def __init__(self, db: Database, client_cert: CertType, reload: bool, source_config: Optional[SourceConfig] = None):
         self._db = db
@@ -22,6 +26,8 @@ class EShop:
         self._source_config = source_config
 
     def get_titles(self, region: Region, shop_id: int) -> None:
+        _logger.info(f'retrieving titles for region {region}, shop ID {shop_id}')
+
         # shop_id=1 for 3DS, shop_id=2 for WiiU
         samurai = Samurai(region, shop_id, None, self._source_config)
         ninja = Ninja(region, self._client_cert, self._source_config)
@@ -31,14 +37,16 @@ class EShop:
         title_iterable = itertools.chain.from_iterable(lst.titles for lst in samurai.get_all_title_lists(skip_cache_read=self._reload))
 
         for i, title in enumerate(title_iterable):
-            print(f'{i + 1}/{num_titles}', title.content_id)
+            _logger.info(f'title {title.content_id} ({i + 1}/{num_titles})')
 
             # skip retail only
             if not title.release_date_eshop and not title.sales_eshop:
+                _logger.debug(f'skipping {title.content_id}, retail only')
                 continue
 
             # skip "Wii U builtin software", currently only matches TVii
             if title.platform.id == 143:
+                _logger.debug(f'skipping {title.content_id}, unrelated platform')
                 continue
 
             ec_info = ninja.get_ec_info(title.content_id)
@@ -68,19 +76,26 @@ class EShop:
                 ))
 
     def get_wiiu_updates(self, start_list_version: int = 1) -> int:
+        _logger.info('retrieving updates')
+
         tagaya_direct = TagayaNoCDN(self._source_config)
         latest_list_version = tagaya_direct.get_latest_updatelist_version().latest
+        _logger.debug(f'latest updatelist version: {latest_list_version}; starting from {start_list_version}')
 
         ccs = ContentServerCDN(self._source_config)
         tagaya_cdn = TagayaCDN(self._source_config)
         for list_version in range(start_list_version, latest_list_version + 1):
+            _logger.info(f'retrieving updatelist version {list_version}/{latest_list_version}')
             try:
                 update_list = tagaya_cdn.get_updatelist(list_version).updates
             except ResponseStatusError as e:
                 # ignore 403 received for some lists
                 if e.status == 403:
+                    _logger.debug(f'got 403 for updatelist version {list_version}, ignoring')
                     continue
                 raise
+
+            _logger.debug(f'found {len(update_list)} updates in list version {list_version}')
 
             for update_id, update_version in update_list:
                 if not update_id.is_update:
@@ -94,18 +109,21 @@ class EShop:
                 )
                 # no need to calculate sizes for titles already present in db
                 if update_title not in self._db:
+                    _logger.info(f'calculating size of update {update_id} v{update_version}')
                     self._add_size(ccs, update_title, False)
                     self._db.add_title(update_title)
 
         return latest_list_version
 
     def get_wiiu_dlcs(self) -> None:
+        _logger.info('retrieving dlcs')
+
         ccs = ContentServerCDN(self._source_config)
 
-        for game in self._db._titles[DatabaseJsonType.GAMES]:
-            # only check WiiU games
-            if game.title_id.type != ids.TitleType.GAME_WIIU:
-                continue
+        # only check WiiU games
+        wiiu_games = [t for t in self._db._titles[DatabaseJsonType.GAMES] if t.title_id.type == ids.TitleType.GAME_WIIU]
+        for i, title in enumerate(wiiu_games):
+            _logger.info(f'checking if title {title.title_id} has dlc ({i + 1}/{len(wiiu_games)})')
 
             # some comments:
             #  - this approach isn't great, because it's essentially bruteforcing TMDs,
@@ -117,7 +135,7 @@ class EShop:
 
             # create DLC title
             dlc_title = Title(
-                title_id=game.title_id.dlc
+                title_id=title.title_id.dlc
             )
             try:
                 if dlc_title in self._db:
@@ -125,13 +143,16 @@ class EShop:
                     # TODO: (this next line is pretty inefficient)
                     dlc_title = next(t for t in self._db._titles[DatabaseJsonType.DLCS] if t == dlc_title)
                     self._add_size(ccs, dlc_title, self._reload)
+                    _logger.info('found known dlc, recalculated size')
                 else:
                     # if dlc doesn't exist, get size and add title to db
                     self._add_size(ccs, dlc_title, self._reload)
                     self._db.add_title(dlc_title, overwrite=True)
+                    _logger.info('found new dlc, calculated size')
             except ResponseStatusError as e:
                 # if a 404 is returned, there is no DLC
                 if e.status == 404:
+                    _logger.debug(f'{title.title_id} has no dlc')
                     continue
                 raise
 
