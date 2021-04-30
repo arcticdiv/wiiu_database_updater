@@ -152,7 +152,7 @@ class EShop:
             except ResponseStatusError as e:
                 # if a 404 is returned, there is no DLC
                 if e.status == 404:
-                    _logger.debug(f'{title.title_id} has no dlc')
+                    _logger.debug(f'{title.title_id} doesn\'t have dlcs')
                     continue
                 raise
 

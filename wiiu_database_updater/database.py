@@ -2,7 +2,7 @@ import os
 import json
 import logging
 import collections
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 from nus_tools.region import Region
 
@@ -80,30 +80,25 @@ class Database:
                     # nothing to be done for no/one title
                     continue
 
-                title_all = next((t for t in matching_titles if t.region == Region.ALL), None)
-                if title_all:
-                    # if title with 'ALL' region exists, remove other titles
-                    log_msg = 'found title with \'ALL\' region, removing other related titles'
-                elif {t.region for t in matching_titles} == {Region.EUR, Region.USA, Region.JPN, Region.KOR}:
-                    # if titles for all regions exist, modify one and remove the others
-                    assert len(matching_titles) == 4  # if this fails, someting probably went very wrong
-                    title_all = next(iter(matching_titles))
-                    title_all.region = Region.ALL
-                    log_msg = 'found titles for all regions, merging into one'
-                else:
-                    continue
+                # consider titles with >= 2 regions to be available everywhere.
+                # this is required as USB Helper stores titles by title ID,
+                # multiple entries with the same ID but different regions would result in exceptions
 
-                _logger.info(f'{log_msg} (other regions: {",".join((t.region.name if t.region else "?") for t in matching_titles if t is not title_all)})')
+                title_all = next(iter(matching_titles))
+                _logger.info(
+                    f'found multiple titles with title ID {title_all.title_id}, merging into one '
+                    f'(regions: {",".join((t.region.name if t.region else "?") for t in matching_titles)})'
+                )
+                title_all.region = Region.ALL
 
-                if title_all:
-                    # remove other titles from database
-                    for title in matching_titles:
-                        if title is not title_all:
-                            del db[title]
-                    # clear, reinsert 'ALL' title
-                    matching_titles.clear()
-                    matching_titles[title_all] = None
-                    continue
+                # remove other titles from database
+                for title in matching_titles:
+                    if title is not title_all:
+                        del db[title]
+                # clear, reinsert 'ALL' title
+                matching_titles.clear()
+                matching_titles[title_all] = None
+                continue
 
     def __contains__(self, title):
         if not isinstance(title, Title):
