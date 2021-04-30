@@ -144,5 +144,6 @@ venv*/
 data/
 requests_cache.db
 *.crt
+*.pem
 *.key
 keys.ini
