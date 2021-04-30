@@ -5,6 +5,7 @@ from pathlib import Path
 from nus_tools.config import Configuration as NUSToolsConfiguration
 from nus_tools.structs import rootkey
 from nus_tools.region import Region
+from reqcli.config import Configuration as ReqCliConfiguration
 from reqcli.source import SourceConfig
 
 from .database import Database
@@ -34,6 +35,11 @@ def parse_args() -> argparse.Namespace:
         '--root-key-file',
         default=None,
         help='path to \'Root\' public key (signing CA for TMD/Ticket files)'
+    )
+    parser.add_argument(
+        '--cache-file',
+        default=ReqCliConfiguration.cache_name,
+        help='request database cache path'
     )
     parser.add_argument(
         '--ignore-last-update-list-version',
@@ -111,11 +117,16 @@ def main() -> None:
     if args.root_key_file:
         NUSToolsConfiguration.root_key_struct = rootkey.parse_file(args.root_key_file)
 
+    # set cache path
+    ReqCliConfiguration.cache_name = args.cache_file
+
+    # load previous updatelist version
     if args.ignore_last_update_list_version:
         latest_update_list_version = 1
     else:
         latest_update_list_version = load_update_list_version(args.input_dir)
 
+    # load database
     db = Database(str(args.input_dir))
     db.read_all()
 
@@ -139,9 +150,11 @@ def main() -> None:
         # load dlcs
         eshop.get_wiiu_dlcs()
 
+    # fix/merge regions, write new files
     db.fixup_regions()
     db.write_all(str(args.output_dir))
 
+    # write new updatelist version
     write_update_list_version(args.output_dir, latest_update_list_version)
 
 
