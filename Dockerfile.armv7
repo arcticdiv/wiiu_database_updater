@@ -2,16 +2,17 @@ FROM python:3-slim
 
 WORKDIR /app
 
-# install dependencies
+COPY setup.py requirements.txt ./
 RUN apt-get update \
- && apt-get install -y git \
+ # install dependencies
+ && apt-get install -y build-essential zlib1g-dev libxml2-dev libxslt1-dev libxslt1.1 python-dev git \
+ # build
+ && mkdir wiiu_database_updater \
+ && pip install -e . \
+ # uninstall build dependencies, clean up
+ && apt-get purge -y --autoremove build-essential zlib1g-dev libxml2-dev libxslt1-dev python-dev \
  && apt-get clean \
  && find /var/lib/apt/lists/ /tmp/ /var/tmp/ -mindepth 1 -maxdepth 1 -exec rm -rf "{}" +
-
-# build
-COPY setup.py requirements.txt ./
-RUN mkdir wiiu_database_updater \
- && pip install -e .
 
 # copy app
 COPY . .

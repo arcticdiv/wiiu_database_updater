@@ -47,7 +47,7 @@ optional arguments:
 ```
 
 ## Docker
-The included [`Dockerfile`](./Dockerfile) can be used with the following command:
+The docker image (see [`Dockerfile`](./Dockerfile)) can be used with the following command:
 
 ```shell
 $ docker run --rm -v $(pwd)/data:/app/data \
@@ -56,6 +56,7 @@ $ docker run --rm -v $(pwd)/data:/app/data \
     --root-key-file data/root-key \
     [additional args]
 ```
+When building the image yourself, note the special [`Dockerfile.armv7`](./Dockerfile.armv7) for, you guessed it, armv7 architectures, since those (currently) need to build `lxml` from source.
 
 The `./data` directory should be set up to look like this:
 ```
@@ -67,4 +68,5 @@ The `./data` directory should be set up to look like this:
 |  |- [updated files will be put here]
 |
 |- WIIU_COMMON_1_CERT.pem
+|- root-key (optional)
 ```
