@@ -42,6 +42,11 @@ def parse_args() -> argparse.Namespace:
         help='request database cache path'
     )
     parser.add_argument(
+        '--keys-file',
+        default=NUSToolsConfiguration.keys_file,
+        help='keys.ini path'
+    )
+    parser.add_argument(
         '--ignore-last-update-list-version',
         action='store_true',
         help='ignore any stored update list version files, always start from 1'
@@ -119,6 +124,9 @@ def main() -> None:
 
     # set cache path
     ReqCliConfiguration.cache_name = args.cache_file
+
+    # set keys.ini path
+    NUSToolsConfiguration.keys_file = args.keys_file
 
     # load previous updatelist version
     if args.ignore_last_update_list_version:

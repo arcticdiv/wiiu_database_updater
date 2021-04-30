@@ -18,5 +18,6 @@ VOLUME ./data
 ENTRYPOINT [ \
     "python", "-m", "wiiu_database_updater", \
     "data/WIIU_COMMON_1_CERT.pem", "data/orig", "data/new", \
-    "--cache-file", "data/requests_cache.db" \
+    "--cache-file", "data/requests_cache.db", \
+    "--keys-file", "data/keys.ini" \
 ]
