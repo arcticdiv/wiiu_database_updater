@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def read(filename):
@@ -17,7 +17,7 @@ setup(
     author='arcticdiv',
     url='https://github.com/arcticdiv/wiiu_database_updater',
     license='Apache 2.0',
-    packages=['wiiu_database_updater'],
+    packages=find_packages(),
     install_requires=read('requirements.txt').splitlines(),
     python_requires='>=3.7',
     classifiers=[

@@ -1,13 +1,15 @@
-FROM python:3-alpine
+FROM python:3-slim
 
+
+RUN apt-get update \
+ && apt-get install -y git \
+ && apt-get clean \
+ && find /var/lib/apt/lists/ /tmp/ /var/tmp/ -mindepth 1 -maxdepth 1 -exec rm -rf "{}" +
 
 WORKDIR /app
 COPY setup.py requirements.txt ./
-RUN apk add --no-cache --update --virtual build-dependencies build-base python3-dev libxslt-dev git \
- && apk add --no-cache libxslt \
- && mkdir wiiu_database_updater \
- && pip install -e . \
- && apk del build-dependencies
+RUN mkdir wiiu_database_updater \
+ && pip install -e .
 
 COPY . .
 
