@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 from nus_tools import ids
 from nus_tools.region import Region
@@ -16,7 +16,7 @@ class Title:
     '''
 
     title_id: ids.TitleID
-    eshop_id: Union[ids.ContentID, str] = ''
+    eshop_id: str = ''
     icon_url: str = ''
     name: str = ''
     platform: int = 0
@@ -34,15 +34,9 @@ class Title:
         it with the specified json file type
         '''
 
-        # custom titles, injections and Wii titles don't have valid eshop IDs
-        try:
-            eshop_id = ids.ContentID(obj['EshopId'])
-        except Exception:
-            eshop_id = obj['EshopId']
-
         title = cls(
             ids.TitleID(obj['TitleId']),
-            eshop_id,
+            obj['EshopId'],
             obj['IconUrl'],
             obj['Name'],
             obj['Platform'],
@@ -62,7 +56,7 @@ class Title:
         '''
 
         return {
-            'EshopId': str(self.eshop_id),
+            'EshopId': self.eshop_id,
             'IconUrl': self.icon_url,
             'Name': self.name,
             'Platform': self.platform,

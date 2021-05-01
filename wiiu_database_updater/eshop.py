@@ -73,7 +73,7 @@ class EShop:
             for title_region in title_regions:
                 self._db.add_title(Title(
                     ec_info.title_id,
-                    title.content_id,
+                    str(title.content_id),
                     title.icon_url or '',
                     title.name,
                     title.platform.id,
