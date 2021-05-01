@@ -98,6 +98,11 @@ def parse_args() -> argparse.Namespace:
 
 
 def load_update_list_version(input_dir: Path) -> int:
+    '''
+    Loads the previously last update list version from the specified directory,
+    returning the default value (1) if the file doesn't exist
+    '''
+
     path = input_dir / latest_update_list_version_name
     if not path.exists():
         return 1
@@ -105,6 +110,10 @@ def load_update_list_version(input_dir: Path) -> int:
 
 
 def write_update_list_version(output_dir: Path, version: int) -> None:
+    '''
+    Writes the specified version to the given directory
+    '''
+
     path = output_dir / latest_update_list_version_name
     path.write_text(str(version))
 

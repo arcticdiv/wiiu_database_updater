@@ -4,6 +4,10 @@ from nus_tools import ids
 
 
 class DatabaseJsonType(Enum):
+    '''
+    Indicates a :class:`Title`'s origin/target .json file
+    '''
+
     CUSTOMS = auto()
     DLCS = auto()
     DLCS_3DS = auto()

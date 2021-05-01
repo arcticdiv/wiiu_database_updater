@@ -16,6 +16,10 @@ _logger = logging.getLogger(__name__)
 
 
 class Database:
+    '''
+    Database keeping track of titles, separated by their corresponding json file type
+    '''
+
     # main title database
     _titles: Dict[DatabaseJsonType, TitleSet]
     # additional map without taking regions into account, reduces O(n^2) complexity to approx. O(n) later on
@@ -27,14 +31,27 @@ class Database:
         self._titles_noregion = {type: collections.defaultdict(lambda: {}) for type in DatabaseJsonType}
 
     def read_all(self) -> None:
+        '''
+        Reads all .json files
+        '''
+
         for type in DatabaseJsonType:
             self._read(type)
 
     def write_all(self, directory: Optional[str] = None) -> None:
+        '''
+        Writes all files to the specified dictionary
+        '''
+
         for type in DatabaseJsonType:
             self._write(type, directory)
 
     def _read(self, type: DatabaseJsonType) -> None:
+        '''
+        Reads the .json file associated with the specified type and adds the
+        titles to the database
+        '''
+
         with open(os.path.join(self.directory, type.filename), 'r') as f:
             data = json.load(f)
 
@@ -44,6 +61,11 @@ class Database:
         _logger.info(f'read {len(data):>5} titles from {type.filename}')
 
     def _write(self, type: DatabaseJsonType, directory: Optional[str]) -> None:
+        '''
+        Writes the titles into the .json file associated with
+        the specified type to the given directory
+        '''
+
         directory = directory if directory is not None else self.directory
         os.makedirs(directory, exist_ok=True)
 
@@ -57,6 +79,14 @@ class Database:
         _logger.info(f'wrote {len(serialized):>5} titles to {type.filename}')
 
     def add_title(self, title: Title, overwrite: bool = False) -> None:
+        '''
+        Adds a title to the database
+
+        Args:
+            title (Title): The title to be added
+            overwrite (bool, optional): Whether to overwrite existing titles instead of skipping them. Defaults to False
+        '''
+
         db = self._titles[title.json_type]
         db_noregion = self._titles_noregion[title.json_type][TitleNoRegionWrap(title)]
 
@@ -71,6 +101,11 @@ class Database:
         db_noregion[title] = None
 
     def fixup_regions(self) -> None:
+        '''
+        Merges sets of titles with the same ID (+ version) but different regions into
+        a single title with the 'ALL' region.
+        '''
+
         for json_type in (DatabaseJsonType.GAMES, DatabaseJsonType.GAMES_3DS, DatabaseJsonType.GAMES_WII, DatabaseJsonType.INJECTIONS):
             db = self._titles[json_type]
             db_noregion = self._titles_noregion[json_type]

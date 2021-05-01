@@ -19,6 +19,10 @@ _logger = logging.getLogger(__name__)
 
 
 class EShop:
+    '''
+    Used for retrieving different types of :class:`Title` object from eShop data
+    '''
+
     def __init__(self, db: Database, client_cert: CertType, reload: bool, source_config: Optional[SourceConfig] = None):
         self._db = db
         self._client_cert = client_cert
@@ -26,6 +30,12 @@ class EShop:
         self._source_config = source_config
 
     def get_titles(self, region: Region, shop_id: int) -> None:
+        '''
+        Retrieves titles for the for the specified region and shop ID,
+        using the samurai (general metadata), ninja (title ID, size) and idbe (region) servers,
+        and adds them to the database
+        '''
+
         _logger.info(f'retrieving titles for region {region}, shop ID {shop_id}')
 
         # shop_id=1 for 3DS, shop_id=2 for WiiU
@@ -76,6 +86,11 @@ class EShop:
                 ))
 
     def get_wiiu_updates(self, start_list_version: int = 1) -> int:
+        '''
+        Retrieves all update lists starting from the specified list version,
+        calculating the size of new updates and adding them to the database
+        '''
+
         _logger.info('retrieving updates')
 
         tagaya_direct = TagayaNoCDN(self._source_config)
@@ -116,6 +131,12 @@ class EShop:
         return latest_list_version
 
     def get_wiiu_dlcs(self) -> None:
+        '''
+        Retrieves DLCs for titles in the database by checking for the existence of
+        their respective TMDs, adding them to the database if they didn't exist
+        previously or updating existing database entries
+        '''
+
         _logger.info('retrieving dlcs')
 
         ccs = ContentServerCDN(self._source_config)
@@ -157,6 +178,10 @@ class EShop:
                 raise
 
     def _get_regions(self, idbe: IDBEServer, title_id: ids.TTitleIDInput) -> List[Region]:
+        '''
+        Computes the regions for the specified title ID using its associated IDBE file
+        '''
+
         region_codes = idbe.get_idbe(title_id).data.regions
 
         if region_codes.ALL:
@@ -184,6 +209,10 @@ class EShop:
             return regions
 
     def _add_size(self, ccs: ContentServerCDN, title: Title, skip_cache_read: bool) -> None:
+        '''
+        Calculates the size of the specified title using its TMD and adds the size to that title
+        '''
+
         # get TMD for title (+ version)
         version = title.version if title.title_id.is_update else None
         tmd = ccs.get_tmd(title.title_id, version, skip_cache_read=skip_cache_read).data

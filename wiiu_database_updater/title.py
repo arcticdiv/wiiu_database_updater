@@ -9,6 +9,12 @@ from .jsontype import DatabaseJsonType
 
 @dataclass
 class Title:
+    '''
+    Represents a title in the database
+
+    Titles are considered equal if they have the same titleID, version and region
+    '''
+
     title_id: ids.TitleID
     eshop_id: Union[ids.ContentID, str] = ''
     icon_url: str = ''
@@ -23,6 +29,11 @@ class Title:
 
     @classmethod
     def from_json_obj(cls, obj: Dict[str, Any], json_type: DatabaseJsonType) -> 'Title':
+        '''
+        Creates a :class:`Title` object from the given json object, associating
+        it with the specified json file type
+        '''
+
         # custom titles, injections and Wii titles don't have valid eshop IDs
         try:
             eshop_id = ids.ContentID(obj['EshopId'])
@@ -46,6 +57,10 @@ class Title:
         return title
 
     def to_json_obj(self) -> Dict[str, Any]:
+        '''
+        Creates a valid json object based on this :class:`Title` object
+        '''
+
         return {
             'EshopId': str(self.eshop_id),
             'IconUrl': self.icon_url,
@@ -78,6 +93,11 @@ class Title:
 
 
 class TitleNoRegionWrap:
+    '''
+    Wraps a :class:`Title` object, without taking title regions into
+    consideration when hashing/checking equality
+    '''
+
     def __init__(self, title: Title):
         self.title = title
 
